@@ -3,6 +3,7 @@
 
 package com.microsoft.applicationinsights.attach;
 
+import edu.umd.cs.findbugs.annotations.Nullable;
 import io.opentelemetry.contrib.attach.core.CoreRuntimeAttach;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -94,10 +95,12 @@ public final class ApplicationInsights {
     }
   }
 
-  private static InputStream findResourceAsStreamFromCWD(String fileName) {
+  @Nullable
+  private static InputStream findResourceAsStreamFromCwd(String fileName) {
     Path filePath = Paths.get(System.getProperty("user.dir"), fileName);
-    if (!Files.isReadable(filePath))
+    if (!Files.isReadable(filePath)) {
       return null;
+    }
     try (InputStream inputStream = Files.newInputStream(filePath)) {
       return inputStream;
     } catch (IOException e) {
@@ -109,12 +112,12 @@ public final class ApplicationInsights {
   private static InputStream findResourceAsStream(String fileName) {
     InputStream configContentAsInputStream;
 
-    configContentAsInputStream = findResourceAsStreamFromCWD(fileName);
-    if (configContentAsInputStream != null)
+    configContentAsInputStream = findResourceAsStreamFromCwd(fileName);
+    if (configContentAsInputStream != null) {
       return configContentAsInputStream;
+    }
 
-    configContentAsInputStream =
-        ApplicationInsights.class.getResourceAsStream("/" + fileName);
+    configContentAsInputStream = ApplicationInsights.class.getResourceAsStream("/" + fileName);
     if (configContentAsInputStream == null && isJsonFileConfiguredWithProperty()) {
       throw new ConfigurationException(fileName + " not found on the class path");
     }
