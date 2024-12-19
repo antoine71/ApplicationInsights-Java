@@ -5,10 +5,18 @@ package com.microsoft.applicationinsights.attach;
 
 import io.opentelemetry.contrib.attach.core.CoreRuntimeAttach;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -91,8 +99,26 @@ public final class ApplicationInsights {
     }
   }
 
+  private static InputStream findResourceAsStreamFromCWD(String fileName) {
+    Path filePath = Paths.get(System.getProperty("user.dir"), fileName);
+    if (!Files.isReadable(filePath))
+      return null;
+    try (InputStream inputStream = Files.newInputStream(filePath)) {
+      return inputStream;
+    } catch (IOException e) {
+      logger.log(Level.WARNING, "Unable to read config file from " + filePath + " : " + e);
+      return null;
+    }
+  }
+
   private static InputStream findResourceAsStream(String fileName) {
-    InputStream configContentAsInputStream =
+    InputStream configContentAsInputStream;
+
+    configContentAsInputStream = findResourceAsStreamFromCWD(fileName);
+    if (configContentAsInputStream != null)
+      return configContentAsInputStream;
+
+    configContentAsInputStream =
         ApplicationInsights.class.getResourceAsStream("/" + fileName);
     if (configContentAsInputStream == null && isJsonFileConfiguredWithProperty()) {
       throw new ConfigurationException(fileName + " not found on the class path");
